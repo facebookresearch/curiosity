@@ -24,7 +24,15 @@ To run it, you'll need to install some software and download some data.
 
 ### Installation
 
-1. Install a recent version of anaconda python https://www.anaconda.com/distribution/
+Install a recent version of anaconda python https://www.anaconda.com/distribution/
+For better reproducibility, we are providing python poetry based environment definitions in addition to anaconda environments.
+
+### Updated Poetry-based Instructions
+
+Install python-poetry.org and then run `poetry install`. Before running any other commands, first enter the environment with `poetry shell`.
+
+
+### Original Anaconda-based Instructions
 
 For CPU:
 
@@ -73,16 +81,16 @@ In our paper, we vary models according to two axes:
 The configuration `configs/model.jsonnet` is the parent configuration. This can be converted into the set of configurations in the paper by running:
 
 ```bash
-$ ./cli gen-configs /data/users/par/experiments/
+$ ./cli gen-configs experiments/
 ```
 
 This generates configurations in `configs/generated/` and a run file `run_allennlp.sh` that lists the correct command to run each model variant. Generally, the commands look like this:
 
 ```bash
-$ allennlp train --include-package curiosity -s /data/users/par/models/glove_bilstm -f configs/generated/glove_bilstm.json
-$ allennlp evaluate --include-package curiosity --output-file /data/users/par/experiments/glove_bilstm_val_metrics.json /data/users/par/models/glove_bilstm /data/users/par/dialog-data/folded/1022/curiosity_dialogs.val.json
-$ allennlp evaluate --include-package curiosity --output-file /data/users/par/experiments/glove_bilstm_test_metrics.json /data/users/par/models/glove_bilstm /data/users/par/dialog-data/folded/1022/curiosity_dialogs.test.json
-$ allennlp evaluate --include-package curiosity --output-file /data/users/par/experiments/glove_bilstm_zero_metrics.json /data/users/par/models/glove_bilstm /data/users/par/dialog-data/folded/1022/curiosity_dialogs.test_zero.json
+$ allennlp train --include-package curiosity -s models/glove_bilstm -f configs/generated/glove_bilstm.json
+$ allennlp evaluate --include-package curiosity --output-file experiments/glove_bilstm_val_metrics.json models/glove_bilstm dialog_data/curiosity_dialogs.val.json
+$ allennlp evaluate --include-package curiosity --output-file experiments/glove_bilstm_test_metrics.json models/glove_bilstm dialog_data/curiosity_dialogs.test.json
+$ allennlp evaluate --include-package curiosity --output-file experiments/glove_bilstm_zero_metrics.json models/glove_bilstm dialog_data/curiosity_dialogs.test_zero.json
 ```
 
 ### Running on GPU
@@ -92,9 +100,8 @@ In addition to installing the gpu variant of the environment, to use the GPU you
 The configuration generator also properly names files so that if you copy files with `ssh` as shown below, the results will automagically update the next time you run `make 2020_acl_curiosity.paper.pdf` in the repo:
 
 
-
 ```bash
-scp '/data/users/par/experiments/*' ~/code/curiosity-paper/2020_acl_curiosity/data/experiments/
+cp 'experiments/*' ~/code/curiosity-paper/2020_acl_curiosity/data/experiments/
 ```
 Then be sure to commit those updates to the repository.
 

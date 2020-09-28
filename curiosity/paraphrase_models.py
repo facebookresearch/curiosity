@@ -50,7 +50,7 @@ class FactParaphraseSeq2Seq(Model):
         scheduled_sampling_ratio: float = 0.0,
         use_bleu: bool = True,
         use_dialog_acts: bool = True,
-        regularizers: Optional[RegularizerApplicator] = None
+        regularizers: Optional[RegularizerApplicator] = None,
     ) -> None:
         super().__init__(vocab, regularizers)
         self._target_namespace = target_namespace
@@ -59,17 +59,18 @@ class FactParaphraseSeq2Seq(Model):
         # We need the start symbol to provide as the input at the first
         # timestep of decoding, and end symbol as a way to indicate the end
         # of the decoded sequence.
-        self._start_index = \
-            self.vocab.get_token_index(START_SYMBOL, self._target_namespace)
-        self._end_index = \
-            self.vocab.get_token_index(END_SYMBOL, self._target_namespace)
+        self._start_index = self.vocab.get_token_index(
+            START_SYMBOL, self._target_namespace
+        )
+        self._end_index = self.vocab.get_token_index(END_SYMBOL, self._target_namespace)
 
         if use_bleu:
             pad_index = self.vocab.get_token_index(
                 self.vocab._padding_token, self._target_namespace
             )
-            self._bleu = \
-                BLEU(exclude_indices={pad_index, self._end_index, self._start_index})
+            self._bleu = BLEU(
+                exclude_indices={pad_index, self._end_index, self._start_index}
+            )
         else:
             self._bleu = None
 
@@ -127,7 +128,7 @@ class FactParaphraseSeq2Seq(Model):
                 Linear(
                     self._source_encoder.get_output_dim()
                     + self._dialog_acts_encoder.get_output_dim(),
-                    self._encoder_output_dim
+                    self._encoder_output_dim,
                 )
             )
         self._decoder_output_dim = self._encoder_output_dim
@@ -157,8 +158,9 @@ class FactParaphraseSeq2Seq(Model):
         Take a decoding step. This is called by the beam search class.
         """
         # shape: (group_size, num_classes)
-        output_projections, state = \
-            self._prepare_output_projections(last_predictions, state)
+        output_projections, state = self._prepare_output_projections(
+            last_predictions, state
+        )
 
         # shape: (group_size, num_classes)
         class_log_probabilities = F.log_softmax(output_projections, dim=-1)
@@ -172,7 +174,7 @@ class FactParaphraseSeq2Seq(Model):
         target_tokens: Dict[str, torch.LongTensor] = None,
         dialog_acts: Optional[torch.Tensor] = None,
         sender: Optional[torch.Tensor] = None,
-        metadata: Optional[Dict] = None
+        metadata: Optional[Dict] = None,
     ) -> Dict[str, torch.Tensor]:
         """
         Make foward pass with decoder logic for producing the entire target sequence.
@@ -227,9 +229,7 @@ class FactParaphraseSeq2Seq(Model):
         return output_dict
 
     def _encode(
-        self,
-        source_tokens: Dict[str, torch.Tensor],
-        dialog_acts: torch.Tensor = None
+        self, source_tokens: Dict[str, torch.Tensor], dialog_acts: torch.Tensor = None
     ) -> Tuple[Dict[str, torch.Tensor], torch.Tensor]:
         # Encode source tokens
         source_state = self._encode_source_tokens(source_tokens)
@@ -244,8 +244,7 @@ class FactParaphraseSeq2Seq(Model):
         return (source_state, dialog_acts_state)
 
     def _encode_source_tokens(
-        self,
-        source_tokens: Dict[str, torch.Tensor]
+        self, source_tokens: Dict[str, torch.Tensor]
     ) -> Dict[str, torch.Tensor]:
         # shape: (batch_size, max_input_sequence_length, encoder_input_dim)
         embedded_input = self._source_embedder(source_tokens)
@@ -266,7 +265,7 @@ class FactParaphraseSeq2Seq(Model):
     def _init_decoder_state(
         self,
         source_state: Dict[str, torch.Tensor],
-        dialog_acts_state: torch.Tensor = None
+        dialog_acts_state: torch.Tensor = None,
     ) -> Dict[str, torch.Tensor]:
         batch_size = source_state["source_mask"].size(0)
 
@@ -274,13 +273,14 @@ class FactParaphraseSeq2Seq(Model):
         final_encoder_output = util.get_final_encoder_states(
             source_state["encoder_outputs"],
             source_state["source_mask"],
-            self._source_encoder.is_bidirectional()
+            self._source_encoder.is_bidirectional(),
         )
 
         # Condition the source tokens state with dialog acts state
         if self._dialog_acts_encoder:
             final_encoder_output = self._merge_encoder(
-                torch.cat([final_encoder_output, dialog_acts_state], dim=1))
+                torch.cat([final_encoder_output, dialog_acts_state], dim=1)
+            )
 
         # Initialize the decoder hidden state with the final output of the encoder.
         # shape: (batch_size, decoder_output_dim)
@@ -294,7 +294,7 @@ class FactParaphraseSeq2Seq(Model):
     def _forward_loop(
         self,
         state: Dict[str, torch.Tensor],
-        target_tokens: Dict[str, torch.LongTensor] = None
+        target_tokens: Dict[str, torch.LongTensor] = None,
     ) -> Dict[str, torch.Tensor]:
         """
         Make forward pass during training or do greedy search during prediction.
@@ -322,8 +322,9 @@ class FactParaphraseSeq2Seq(Model):
 
         # Initialize target predictions with the start index.
         # shape: (batch_size,)
-        last_predictions = \
-            source_mask.new_full((batch_size,), fill_value=self._start_index)
+        last_predictions = source_mask.new_full(
+            (batch_size,), fill_value=self._start_index
+        )
 
         step_logits: List[torch.Tensor] = []
         step_predictions: List[torch.Tensor] = []
@@ -341,8 +342,9 @@ class FactParaphraseSeq2Seq(Model):
                 input_choices = targets[:, timestep]
 
             # shape: (batch_size, num_classes)
-            output_projections, state = \
-                self._prepare_output_projections(input_choices, state)
+            output_projections, state = self._prepare_output_projections(
+                input_choices, state
+            )
 
             # list of tensors, shape: (batch_size, 1, num_classes)
             step_logits.append(output_projections.unsqueeze(1))
@@ -375,8 +377,7 @@ class FactParaphraseSeq2Seq(Model):
         return output_dict
 
     def _forward_beam_search(
-        self,
-        state: Dict[str, torch.Tensor]
+        self, state: Dict[str, torch.Tensor]
     ) -> Dict[str, torch.Tensor]:
         """Make forward pass during prediction using a beam search."""
         batch_size = state["source_mask"].size()[0]
@@ -397,9 +398,7 @@ class FactParaphraseSeq2Seq(Model):
         return output_dict
 
     def _prepare_output_projections(
-        self,
-        last_predictions: torch.Tensor,
-        state: Dict[str, torch.Tensor]
+        self, last_predictions: torch.Tensor, state: Dict[str, torch.Tensor]
     ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
         """
         Decode current state and last prediction to produce produce projections
@@ -461,8 +460,9 @@ class FactParaphraseSeq2Seq(Model):
         encoder_outputs_mask = encoder_outputs_mask.float()
 
         # shape: (batch_size, max_input_sequence_length)
-        input_weights = \
-            self._attention(decoder_hidden_state, encoder_outputs, encoder_outputs_mask)
+        input_weights = self._attention(
+            decoder_hidden_state, encoder_outputs, encoder_outputs_mask
+        )
 
         # shape: (batch_size, encoder_output_dim)
         attended_input = util.weighted_sum(encoder_outputs, input_weights)
@@ -473,7 +473,7 @@ class FactParaphraseSeq2Seq(Model):
     def _get_loss(
         logits: torch.LongTensor,
         targets: torch.LongTensor,
-        target_mask: torch.LongTensor
+        target_mask: torch.LongTensor,
     ) -> torch.Tensor:
 
         # shape: (batch_size, num_decoding_steps)
@@ -482,7 +482,9 @@ class FactParaphraseSeq2Seq(Model):
         # shape: (batch_size, num_decoding_steps)
         relevant_mask = target_mask[:, 1:].contiguous()
 
-        return util.sequence_cross_entropy_with_logits(logits, relevant_targets, relevant_mask)
+        return util.sequence_cross_entropy_with_logits(
+            logits, relevant_targets, relevant_mask
+        )
 
     @overrides
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:

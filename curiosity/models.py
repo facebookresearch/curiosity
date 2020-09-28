@@ -4,8 +4,9 @@ import math
 import torch
 from torch import nn
 from allennlp.nn.util import (
-    get_text_field_mask, sequence_cross_entropy_with_logits,
-    masked_mean
+    get_text_field_mask,
+    sequence_cross_entropy_with_logits,
+    masked_mean,
 )
 from allennlp.data.vocabulary import Vocabulary
 from allennlp.models import Model
@@ -25,7 +26,7 @@ def gelu(x):
 
 
 class GeLU(nn.Module):
-    __constants__ = ['inplace']
+    __constants__ = ["inplace"]
 
     def __init__(self, inplace=False):
         super(GeLU, self).__init__()
@@ -47,28 +48,30 @@ class Clamp(nn.Module):
             return input_
 
 
-@Model.register('curiosity_model')
+@Model.register("curiosity_model")
 class CuriosityModel(Model):
-    def __init__(self,
-                 vocab: Vocabulary,
-                 use_glove: bool,
-                 use_bert: bool,
-                 bert_trainable: bool,
-                 bert_name: str,
-                 mention_embedder: TextFieldEmbedder,
-                 dialog_context: Seq2SeqEncoder,
-                 fact_ranker: FactRanker,
-                 dropout_prob: float,
-                 sender_emb_size: int,
-                 act_emb_size: int,
-                 fact_loss_weight: float,
-                 fact_pos_weight: float,
-                 utter_embedder: TextFieldEmbedder = None,
-                 utter_context: Seq2VecEncoder = None,
-                 disable_known_entities: bool = False,
-                 disable_dialog_acts: bool = False,
-                 disable_likes: bool = False,
-                 disable_facts: bool = False):
+    def __init__(
+        self,
+        vocab: Vocabulary,
+        use_glove: bool,
+        use_bert: bool,
+        bert_trainable: bool,
+        bert_name: str,
+        mention_embedder: TextFieldEmbedder,
+        dialog_context: Seq2SeqEncoder,
+        fact_ranker: FactRanker,
+        dropout_prob: float,
+        sender_emb_size: int,
+        act_emb_size: int,
+        fact_loss_weight: float,
+        fact_pos_weight: float,
+        utter_embedder: TextFieldEmbedder = None,
+        utter_context: Seq2VecEncoder = None,
+        disable_known_entities: bool = False,
+        disable_dialog_acts: bool = False,
+        disable_likes: bool = False,
+        disable_facts: bool = False,
+    ):
         super().__init__(vocab)
         self._disable_known_entities = disable_known_entities
         self._disable_dialog_acts = disable_dialog_acts
@@ -85,13 +88,12 @@ class CuriosityModel(Model):
         self._sender_emb = nn.Embedding(2, sender_emb_size)
         # Easier to use a matrix as embeddings, given the input format
         self._act_embedder = nn.Linear(
-            vocab.get_vocab_size(DIALOG_ACT_LABELS),
-            act_emb_size, bias=False
+            vocab.get_vocab_size(DIALOG_ACT_LABELS), act_emb_size, bias=False
         )
         self._mention_embedder = mention_embedder
 
         if int(use_glove) + int(use_bert) != 1:
-            raise ValueError('Cannot use bert and glove together')
+            raise ValueError("Cannot use bert and glove together")
 
         self._use_glove = use_glove
         self._use_bert = use_bert
@@ -115,9 +117,7 @@ class CuriosityModel(Model):
         self._fact_ranker = fact_ranker
         # Easier to code as cross entropy with two classes
         # Likes are per message, for only assistant messages
-        self._like_classifier = nn.Linear(
-            self._dialog_context.get_output_dim(), 2
-        )
+        self._like_classifier = nn.Linear(self._dialog_context.get_output_dim(), 2)
         self._like_accuracy = CategoricalAccuracy()
         self._like_loss_metric = Average()
 
@@ -125,17 +125,17 @@ class CuriosityModel(Model):
         self._focus_net = nn.Sequential(
             nn.Linear(
                 self._mention_embedder.get_output_dim(),
-                self._dialog_context.get_output_dim()
+                self._dialog_context.get_output_dim(),
             ),
-            GeLU()
+            GeLU(),
         )
         self._known_net = nn.Sequential(
             nn.Linear(
                 self._mention_embedder.get_output_dim(),
-                self._dialog_context.get_output_dim()
+                self._dialog_context.get_output_dim(),
             ),
             GeLU(),
-            Clamp(should_clamp=disable_known_entities)
+            Clamp(should_clamp=disable_known_entities),
         )
         # If we don't use known, then disable gradient to it
         self._known_net.requires_grad = not disable_known_entities
@@ -146,15 +146,15 @@ class CuriosityModel(Model):
         self._da_classifier = nn.Sequential(
             nn.Linear(
                 self._utter_dim + self._dialog_context.get_output_dim(),
-                self._dialog_context.get_output_dim()
+                self._dialog_context.get_output_dim(),
             ),
             GeLU(),
             nn.Linear(
                 self._dialog_context.get_output_dim(),
-                vocab.get_vocab_size(DIALOG_ACT_LABELS)
-            )
+                vocab.get_vocab_size(DIALOG_ACT_LABELS),
+            ),
         )
-        self._da_bce_loss = torch.nn.BCEWithLogitsLoss(reduction='none')
+        self._da_bce_loss = torch.nn.BCEWithLogitsLoss(reduction="none")
         self._da_f1_metric = MultilabelMicroF1()
         self._da_loss_metric = Average()
 
@@ -164,15 +164,15 @@ class CuriosityModel(Model):
         self._policy_classifier = nn.Sequential(
             nn.Linear(
                 self._dialog_context.get_output_dim(),
-                self._dialog_context.get_output_dim()
+                self._dialog_context.get_output_dim(),
             ),
             GeLU(),
             nn.Linear(
                 self._dialog_context.get_output_dim(),
-                vocab.get_vocab_size(DIALOG_ACT_LABELS)
-            )
+                vocab.get_vocab_size(DIALOG_ACT_LABELS),
+            ),
         )
-        self._policy_bce_loss = torch.nn.BCEWithLogitsLoss(reduction='none')
+        self._policy_bce_loss = torch.nn.BCEWithLogitsLoss(reduction="none")
         self._policy_f1_metric = MultilabelMicroF1()
         self._policy_loss_metric = Average()
 
@@ -182,53 +182,55 @@ class CuriosityModel(Model):
         self._dropout = nn.Dropout(dropout_prob)
         # Fact use is much less prevalant, about 9 times less so, so factor that in
         self._fact_bce_loss = torch.nn.BCEWithLogitsLoss(
-            reduction='none',
-            pos_weight=torch.Tensor([self._fact_pos_weight])
+            reduction="none", pos_weight=torch.Tensor([self._fact_pos_weight])
         )
 
     def get_metrics(self, reset: bool = False):
         da_metrics = self._da_f1_metric.get_metric(reset=reset)
         policy_metrics = self._policy_f1_metric.get_metric(reset=reset)
         metrics_to_report = {
-            'like_accuracy': self._like_accuracy.get_metric(reset=reset),
-            'like_loss': self._like_loss_metric.get_metric(reset=reset),
-            'fact_mrr': self._fact_mrr.get_metric(reset=reset),
-            'fact_loss': self._fact_loss_metric.get_metric(reset=reset),
-            'da_loss': self._da_loss_metric.get_metric(reset=reset),
-            'da_micro_f1': da_metrics['f1'],
-            'da_micro_precision': da_metrics['precision'],
-            'da_micro_recall': da_metrics['recall'],
-            'policy_micro_f1': policy_metrics['f1'],
-            'policy_micro_precision': policy_metrics['precision'],
-            'policy_micro_recall': policy_metrics['recall'],
+            "like_accuracy": self._like_accuracy.get_metric(reset=reset),
+            "like_loss": self._like_loss_metric.get_metric(reset=reset),
+            "fact_mrr": self._fact_mrr.get_metric(reset=reset),
+            "fact_loss": self._fact_loss_metric.get_metric(reset=reset),
+            "da_loss": self._da_loss_metric.get_metric(reset=reset),
+            "da_micro_f1": da_metrics["f1"],
+            "da_micro_precision": da_metrics["precision"],
+            "da_micro_recall": da_metrics["recall"],
+            "policy_micro_f1": policy_metrics["f1"],
+            "policy_micro_precision": policy_metrics["precision"],
+            "policy_micro_recall": policy_metrics["recall"],
         }
-        metrics_to_report['total'] = \
-            metrics_to_report['fact_mrr'] + \
-            metrics_to_report['policy_micro_f1'] + \
-            metrics_to_report['da_micro_f1'] + \
-            metrics_to_report['like_accuracy']
+        metrics_to_report["total"] = (
+            metrics_to_report["fact_mrr"]
+            + metrics_to_report["policy_micro_f1"]
+            + metrics_to_report["da_micro_f1"]
+            + metrics_to_report["like_accuracy"]
+        )
 
         return metrics_to_report
 
-    def forward(self,
-                messages: Dict[str, torch.Tensor],
-                # (batch_size, n_turns, n_facts, n_words)
-                facts: Dict[str, torch.Tensor],
-                # (batch_size, n_turns)
-                senders: torch.Tensor,
-                # (batch_size, n_turns, n_acts)
-                dialog_acts: torch.Tensor,
-                # (batch_size, n_turns)
-                dialog_acts_mask: torch.Tensor,
-                # (batch_size, n_entities)
-                known_entities: Dict[str, torch.Tensor],
-                # (batch_size, 1)
-                focus_entity: Dict[str, torch.Tensor],
-                # (batch_size, n_turns, n_facts)
-                fact_labels: Optional[torch.Tensor] = None,
-                # (batch_size, n_turns, 2)
-                likes: Optional[torch.Tensor] = None,
-                metadata: Optional[Dict] = None):
+    def forward(
+        self,
+        messages: Dict[str, torch.Tensor],
+        # (batch_size, n_turns, n_facts, n_words)
+        facts: Dict[str, torch.Tensor],
+        # (batch_size, n_turns)
+        senders: torch.Tensor,
+        # (batch_size, n_turns, n_acts)
+        dialog_acts: torch.Tensor,
+        # (batch_size, n_turns)
+        dialog_acts_mask: torch.Tensor,
+        # (batch_size, n_entities)
+        known_entities: Dict[str, torch.Tensor],
+        # (batch_size, 1)
+        focus_entity: Dict[str, torch.Tensor],
+        # (batch_size, n_turns, n_facts)
+        fact_labels: Optional[torch.Tensor] = None,
+        # (batch_size, n_turns, 2)
+        likes: Optional[torch.Tensor] = None,
+        metadata: Optional[Dict] = None,
+    ):
         output = {}
         # Take care of the easy stuff first
 
@@ -279,7 +281,7 @@ class CuriosityModel(Model):
                 focus_emb[:, None, :].repeat_interleave(n_turns, 1),
                 known_vec[:, None, :].repeat_interleave(n_turns, 1),
             ),
-            dim=-1
+            dim=-1,
         )
 
         # (batch_size, n_turns, hidden_dim)
@@ -291,10 +293,13 @@ class CuriosityModel(Model):
         # which is what we want
         # This is useful in a few different places, so compute it here once
         shape = dialog_context.shape
-        shifted_context = torch.cat((
-            dialog_context.new_zeros([shape[0], 1, shape[2]]),
-            dialog_context[:, :-1, :]
-        ), dim=1)
+        shifted_context = torch.cat(
+            (
+                dialog_context.new_zeros([shape[0], 1, shape[2]]),
+                dialog_context[:, :-1, :],
+            ),
+            dim=1,
+        )
         has_loss = False
 
         if self._disable_dialog_acts:
@@ -305,14 +310,15 @@ class CuriosityModel(Model):
             has_loss = True
             da_loss = self._compute_da_loss(
                 output,
-                context, shifted_context, utter_mask,
-                dialog_acts, dialog_acts_mask
+                context,
+                shifted_context,
+                utter_mask,
+                dialog_acts,
+                dialog_acts_mask,
             )
             # Policy loss
             policy_loss = self._compute_policy_loss(
-                output,
-                shifted_context, utter_mask,
-                dialog_acts, dialog_acts_mask
+                output, shifted_context, utter_mask, dialog_acts, dialog_acts_mask
             )
 
         if self._disable_facts:
@@ -355,12 +361,10 @@ class CuriosityModel(Model):
                 shifted_context,
                 fact_repr,
             )
-            output['fact_logits'] = fact_logits
+            output["fact_logits"] = fact_logits
             if fact_labels is not None:
                 has_loss = True
-                fact_loss = self._compute_fact_loss(
-                    fact_logits, fact_labels, fact_mask
-                )
+                fact_loss = self._compute_fact_loss(fact_logits, fact_labels, fact_mask)
                 self._fact_loss_metric(fact_loss.item())
                 self._fact_mrr(fact_logits, fact_labels, mask=fact_mask)
             else:
@@ -372,7 +376,7 @@ class CuriosityModel(Model):
             has_loss = True
             # (batch_size, n_turns, 2)
             like_logits = self._like_classifier(dialog_context)
-            output['like_logits'] = like_logits
+            output["like_logits"] = like_logits
 
             # There are several masks here to get the loss/metrics correct
             # - utter_mask: mask out positions that do not have an utterance
@@ -396,39 +400,36 @@ class CuriosityModel(Model):
                 like_loss = 0
 
         if has_loss:
-            output['loss'] = (
-                self._fact_loss_weight * fact_loss
-                + like_loss
-                + da_loss + policy_loss
+            output["loss"] = (
+                self._fact_loss_weight * fact_loss + like_loss + da_loss + policy_loss
             )
 
         return output
 
-    def _compute_da_loss(self,
-                         output_dict,
-                         messages: torch.Tensor,
-                         shifted_context: torch.Tensor,
-                         utter_mask: torch.Tensor,
-                         dialog_acts: torch.Tensor,
-                         dialog_acts_mask: torch.Tensor):
+    def _compute_da_loss(
+        self,
+        output_dict,
+        messages: torch.Tensor,
+        shifted_context: torch.Tensor,
+        utter_mask: torch.Tensor,
+        dialog_acts: torch.Tensor,
+        dialog_acts_mask: torch.Tensor,
+    ):
         """
         Given utterance at turn t, get the context (utter + acts) from t-1,
         the utter_t, and predict the act
         """
-        message_w_context = torch.cat((
-            messages, shifted_context
-        ), dim=-1)
+        message_w_context = torch.cat((messages, shifted_context), dim=-1)
 
         # (batch_size, n_turns, n_dialog_acts)
         da_logits = self._da_classifier(message_w_context)
-        output_dict['da_logits'] = da_logits
+        output_dict["da_logits"] = da_logits
         da_unreduced_loss = self._da_bce_loss(da_logits, dialog_acts.float())
         # Note: the last dimension is expanded from singleton to n_dialog_acts
         # Since the mask is at turn level
         # (batch_size, n_turns, n_dialog_acts)
         da_combined_mask = (
-            dialog_acts_mask.float().unsqueeze(-1)
-            * utter_mask.float().unsqueeze(-1)
+            dialog_acts_mask.float().unsqueeze(-1) * utter_mask.float().unsqueeze(-1)
         ).expand_as(da_unreduced_loss)
         da_unreduced_loss = da_combined_mask * da_unreduced_loss
         # Mean loss over non-masked inputs, avoid division by zero
@@ -436,16 +437,18 @@ class CuriosityModel(Model):
         da_loss_item = da_loss.item()
         self._da_loss_metric(da_loss_item)
         # (batch_size, n_turns, n_dialog_acts)
-        da_preds = (torch.sigmoid(da_logits) > .5).long()
+        da_preds = (torch.sigmoid(da_logits) > 0.5).long()
         self._da_f1_metric(da_preds, dialog_acts, da_combined_mask.long())
         return da_loss
 
-    def _compute_policy_loss(self,
-                         output_dict,
-                         shifted_context: torch.Tensor,
-                         utter_mask: torch.Tensor,
-                         dialog_acts: torch.Tensor,
-                         dialog_acts_mask: torch.Tensor):
+    def _compute_policy_loss(
+        self,
+        output_dict,
+        shifted_context: torch.Tensor,
+        utter_mask: torch.Tensor,
+        dialog_acts: torch.Tensor,
+        dialog_acts_mask: torch.Tensor,
+    ):
         """
         Given utterance at turn t, get the context (utter + acts) from t-1,
         the utter_t, and predict the act
@@ -453,31 +456,33 @@ class CuriosityModel(Model):
 
         # (batch_size, n_turns, n_dialog_acts)
         policy_logits = self._policy_classifier(shifted_context)
-        output_dict['policy_logits'] = policy_logits
-        policy_unreduced_loss = self._policy_bce_loss(policy_logits, dialog_acts.float())
+        output_dict["policy_logits"] = policy_logits
+        policy_unreduced_loss = self._policy_bce_loss(
+            policy_logits, dialog_acts.float()
+        )
         # Note: the last dimension is expanded from singleton to n_dialog_acts
         # Since the mask is at turn level
         # (batch_size, n_turns, n_dialog_acts)
         policy_combined_mask = (
-            dialog_acts_mask.float().unsqueeze(-1)
-            * utter_mask.float().unsqueeze(-1)
+            dialog_acts_mask.float().unsqueeze(-1) * utter_mask.float().unsqueeze(-1)
         ).expand_as(policy_unreduced_loss)
         policy_unreduced_loss = policy_combined_mask * policy_unreduced_loss
         # Mean loss over non-masked inputs, avoid division by zero
-        policy_loss = policy_unreduced_loss.sum() / policy_combined_mask.sum().clamp(min=1)
+        policy_loss = policy_unreduced_loss.sum() / policy_combined_mask.sum().clamp(
+            min=1
+        )
         policy_loss_item = policy_loss.item()
         self._policy_loss_metric(policy_loss_item)
         # (batch_size, n_turns, n_dialog_acts)
-        policy_preds = (torch.sigmoid(policy_logits) > .5).long()
+        policy_preds = (torch.sigmoid(policy_logits) > 0.5).long()
         self._policy_f1_metric(policy_preds, dialog_acts, policy_combined_mask.long())
         return policy_loss
 
-    def _compute_fact_loss(self, logits: torch.Tensor,
-                           fact_labels: torch.Tensor, fact_mask: torch.Tensor):
+    def _compute_fact_loss(
+        self, logits: torch.Tensor, fact_labels: torch.Tensor, fact_mask: torch.Tensor
+    ):
         # Don't reduce to mask out padded facts
         unreduced_loss = self._fact_bce_loss(logits, fact_labels)
-        total_loss = (
-            unreduced_loss * fact_mask.float()
-        ).sum()
+        total_loss = (unreduced_loss * fact_mask.float()).sum()
         mean_loss = total_loss / fact_mask.float().sum()
         return mean_loss

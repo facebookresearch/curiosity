@@ -35,12 +35,12 @@ def save_metrics(metrics: Dict, out_path: str):
         "validation_like_accuracy": 0.0,
         "validation_loss": 0.0,
         "best_validation_like_accuracy": 0.0,
-        "best_validation_loss": 0.0
+        "best_validation_loss": 0.0,
     }
     for key, val in metrics.items():
         out_dict[key] = val
 
-    with open(out_path, 'w') as f:
+    with open(out_path, "w") as f:
         json.dump(out_dict, f)
 
 
@@ -51,57 +51,57 @@ class MajorityLikes:
         self._like_all = True
 
     def train(self, data_path: str) -> None:
-        log.info(f'Training majority classifier with: {data_path}')
+        log.info(f"Training majority classifier with: {data_path}")
         self._n_total_assistant_msgs = 0
         self._n_liked_assistant_msgs = 0
         n_messages = 0
         dialogs = CuriosityDialogReader().read(data_path)
-        log.info(f'N Dialogs: {len(dialogs)}')
+        log.info(f"N Dialogs: {len(dialogs)}")
         for d in dialogs:
-            dialog_senders = d['senders'].array
-            dialog_likes = d['likes']
+            dialog_senders = d["senders"].array
+            dialog_likes = d["likes"]
             for sender, liked in zip(dialog_senders, dialog_likes):
                 # Only care about assistant messages
                 if sender == ASSISTANT_IDX:
-                    if liked.label == 'liked':
+                    if liked.label == "liked":
                         self._n_liked_assistant_msgs += 1
                     self._n_total_assistant_msgs += 1
                 n_messages += 1
         self._n_total_assistant_msgs = max(1, self._n_total_assistant_msgs)
-        log.info(f'N Liked Assistant Messages: {self._n_liked_assistant_msgs}')
-        log.info(f'N Total Assistant Messages: {self._n_total_assistant_msgs}')
-        log.info(f'N Total Messages: {n_messages}')
-        if (self._n_liked_assistant_msgs / self._n_total_assistant_msgs) > .5:
+        log.info(f"N Liked Assistant Messages: {self._n_liked_assistant_msgs}")
+        log.info(f"N Total Assistant Messages: {self._n_total_assistant_msgs}")
+        log.info(f"N Total Messages: {n_messages}")
+        if (self._n_liked_assistant_msgs / self._n_total_assistant_msgs) > 0.5:
             self._like_all = True
         else:
             self._like_all = False
-        log.info(f'Majority Class Liked: {self._like_all}')
+        log.info(f"Majority Class Liked: {self._like_all}")
 
     def score(self, data_path: str) -> float:
-        log.info(f'Scoring majority classifier with: {data_path}')
+        log.info(f"Scoring majority classifier with: {data_path}")
         dialogs = CuriosityDialogReader().read(data_path)
-        log.info(f'N Dialogs: {len(dialogs)}')
+        log.info(f"N Dialogs: {len(dialogs)}")
         correct = 0
         total = 0
         n_messages = 0
         for d in dialogs:
-            dialog_senders = d['senders'].array
-            dialog_likes = d['likes']
+            dialog_senders = d["senders"].array
+            dialog_likes = d["likes"]
             for sender, liked in zip(dialog_senders, dialog_likes):
                 if sender == ASSISTANT_IDX:
                     label = liked.label
                     # If liked and majority class in training was liked
-                    if label == 'liked' and self._like_all:
+                    if label == "liked" and self._like_all:
                         correct += 1
                     # If not liked and majority class in training was not liked
-                    elif label == 'liked' and not self._like_all:
+                    elif label == "liked" and not self._like_all:
                         correct += 1
                     total += 1
                 n_messages += 1
 
-        log.info(f'N Correct Assistant Messages: {correct}')
-        log.info(f'N Total Assistant Messages: {total}')
-        log.info(f'N Total Messages: {n_messages}')
+        log.info(f"N Correct Assistant Messages: {correct}")
+        log.info(f"N Total Assistant Messages: {total}")
+        log.info(f"N Total Messages: {n_messages}")
         total = max(1, total)
         return correct / total
 
@@ -118,14 +118,14 @@ class MajorityDialogActs:
         self._majority = None
 
     def train(self, data_path: str) -> None:
-        log.info(f'Training majority classifier with: {data_path}')
+        log.info(f"Training majority classifier with: {data_path}")
         self._n_total_assistant_msgs = 0
         n_messages = 0
         dialogs = CuriosityDialogReader().read(data_path)
-        log.info(f'N Dialogs: {len(dialogs)}')
+        log.info(f"N Dialogs: {len(dialogs)}")
         for d in dialogs:
-            dialog_senders = d['senders'].array
-            dialog_acts_list = d['dialog_acts']
+            dialog_senders = d["senders"].array
+            dialog_acts_list = d["dialog_acts"]
 
             for i in range(len(dialog_senders)):
                 sender = dialog_senders[i]
@@ -139,12 +139,12 @@ class MajorityDialogActs:
 
                     for act in acts:
                         # Histogram stat per turn
-                        self._count_per_turn[i][act] = \
+                        self._count_per_turn[i][act] = (
                             self._count_per_turn[i].get(act, 0) + 1
+                        )
 
                         # Histogram stat overall
-                        self._count[act] = \
-                            self._count.get(act, 0) + 1
+                        self._count[act] = self._count.get(act, 0) + 1
 
                         # Total count
                         self._n_total_acts += 1
@@ -152,9 +152,9 @@ class MajorityDialogActs:
                     self._n_total_assistant_msgs += 1
                 n_messages += 1
         self._n_total_assistant_msgs = max(1, self._n_total_assistant_msgs)
-        log.info(f'N Total User Messages: {self._n_total_acts}')
-        log.info(f'N Total Acts: {self._n_total_assistant_msgs}')
-        log.info(f'N Total Messages: {n_messages}')
+        log.info(f"N Total User Messages: {self._n_total_acts}")
+        log.info(f"N Total Acts: {self._n_total_assistant_msgs}")
+        log.info(f"N Total Messages: {n_messages}")
 
         # Sort count overall
         lst = [(count, act) for act, count in self._count.items()]
@@ -175,23 +175,23 @@ class MajorityDialogActs:
 
             # Majority act in this turn
             self._majority_per_turn[turn_idx] = majority_act
-            print('Turn: %d, Majority Act: %s' % (turn_idx, majority_act))
+            print("Turn: %d, Majority Act: %s" % (turn_idx, majority_act))
 
-        log.info(f'Majority Act: {self._majority}')
-        log.info(f'Majority Map: {self._majority_per_turn}')
-        log.info(f'Count Map Per Turn: {self._count_per_turn}')
-        log.info(f'Count Map: {self._count}')
+        log.info(f"Majority Act: {self._majority}")
+        log.info(f"Majority Map: {self._majority_per_turn}")
+        log.info(f"Count Map Per Turn: {self._count_per_turn}")
+        log.info(f"Count Map: {self._count}")
 
     def score(self, data_path: str) -> float:
-        log.info(f'Scoring majority classifier with: {data_path}')
+        log.info(f"Scoring majority classifier with: {data_path}")
         dialogs = CuriosityDialogReader().read(data_path)
-        log.info(f'N Dialogs: {len(dialogs)}')
+        log.info(f"N Dialogs: {len(dialogs)}")
         correct = 0
         total = 0
         n_messages = 0
         for d in dialogs:
-            dialog_senders = d['senders'].array
-            dialog_acts_list = d['dialog_acts']
+            dialog_senders = d["senders"].array
+            dialog_acts_list = d["dialog_acts"]
 
             for i in range(len(dialog_senders)):
                 sender = dialog_senders[i]
@@ -209,9 +209,9 @@ class MajorityDialogActs:
                     total += len(acts)
                     n_messages += 1
 
-        log.info(f'N Correct Acts: {correct}')
-        log.info(f'N Total Acts: {total}')
-        log.info(f'N Total Messages: {n_messages}')
+        log.info(f"N Correct Acts: {correct}")
+        log.info(f"N Total Acts: {total}")
+        log.info(f"N Total Messages: {n_messages}")
         total = max(1, total)
         n_messages = max(1, n_messages)
         p = correct / n_messages  # assumes 1 prediction per message
@@ -232,14 +232,14 @@ class MajorityPolicyActs:
         self._majority = None
 
     def train(self, data_path: str) -> None:
-        log.info(f'Training majority classifier with: {data_path}')
+        log.info(f"Training majority classifier with: {data_path}")
         self._n_total_assistant_msgs = 0
         n_messages = 0
         dialogs = CuriosityDialogReader().read(data_path)
-        log.info(f'N Dialogs: {len(dialogs)}')
+        log.info(f"N Dialogs: {len(dialogs)}")
         for d in dialogs:
-            dialog_senders = d['senders'].array
-            dialog_acts_list = d['dialog_acts']
+            dialog_senders = d["senders"].array
+            dialog_acts_list = d["dialog_acts"]
 
             for i in range(len(dialog_senders)):
                 sender = dialog_senders[i]
@@ -253,12 +253,12 @@ class MajorityPolicyActs:
                 if sender == ASSISTANT_IDX:
                     for act in acts:
                         # Histogram stat per turn
-                        self._count_per_turn[i][act] = \
+                        self._count_per_turn[i][act] = (
                             self._count_per_turn[i].get(act, 0) + 1
+                        )
 
                         # Histogram stat overall
-                        self._count[act] = \
-                            self._count.get(act, 0) + 1
+                        self._count[act] = self._count.get(act, 0) + 1
 
                         # Total count
                         self._n_total_acts += 1
@@ -266,9 +266,9 @@ class MajorityPolicyActs:
                     self._n_total_assistant_msgs += 1
                 n_messages += 1
         self._n_total_assistant_msgs = max(1, self._n_total_assistant_msgs)
-        log.info(f'N Total Assistant Messages: {self._n_total_acts}')
-        log.info(f'N Total Acts: {self._n_total_assistant_msgs}')
-        log.info(f'N Total Messages: {n_messages}')
+        log.info(f"N Total Assistant Messages: {self._n_total_acts}")
+        log.info(f"N Total Acts: {self._n_total_assistant_msgs}")
+        log.info(f"N Total Messages: {n_messages}")
 
         # Sort count overall
         lst = [(count, act) for act, count in self._count.items()]
@@ -289,23 +289,23 @@ class MajorityPolicyActs:
 
             # Majority act in this turn
             self._majority_per_turn[turn_idx] = majority_act
-            print('Turn: %d, Majority Act: %s' % (turn_idx, majority_act))
+            print("Turn: %d, Majority Act: %s" % (turn_idx, majority_act))
 
-        log.info(f'Majority Act: {self._majority}')
-        log.info(f'Majority Map: {self._majority_per_turn}')
-        log.info(f'Count Map Per Turn: {self._count_per_turn}')
-        log.info(f'Count Map: {self._count}')
+        log.info(f"Majority Act: {self._majority}")
+        log.info(f"Majority Map: {self._majority_per_turn}")
+        log.info(f"Count Map Per Turn: {self._count_per_turn}")
+        log.info(f"Count Map: {self._count}")
 
     def score(self, data_path: str) -> float:
-        log.info(f'Scoring majority classifier with: {data_path}')
+        log.info(f"Scoring majority classifier with: {data_path}")
         dialogs = CuriosityDialogReader().read(data_path)
-        log.info(f'N Dialogs: {len(dialogs)}')
+        log.info(f"N Dialogs: {len(dialogs)}")
         correct = 0
         total = 0
         n_messages = 0
         for d in dialogs:
-            dialog_senders = d['senders'].array
-            dialog_acts_list = d['dialog_acts']
+            dialog_senders = d["senders"].array
+            dialog_acts_list = d["dialog_acts"]
 
             for i in range(len(dialog_senders)):
                 sender = dialog_senders[i]
@@ -323,9 +323,9 @@ class MajorityPolicyActs:
                     total += len(acts)
                 n_messages += 1
 
-        log.info(f'N Correct Acts: {correct}')
-        log.info(f'N Total Acts: {total}')
-        log.info(f'N Total Messages: {n_messages}')
+        log.info(f"N Correct Acts: {correct}")
+        log.info(f"N Total Acts: {total}")
+        log.info(f"N Total Messages: {n_messages}")
         total = max(1, total)
         n_messages = max(1, n_messages)
         p = correct / n_messages  # assumes 1 prediction per message
@@ -335,7 +335,7 @@ class MajorityPolicyActs:
 
 
 def tokens_to_str(tokens: List[Token]) -> str:
-    return ' '.join(t.text for t in tokens)
+    return " ".join(t.text for t in tokens)
 
 
 class TfidfFactBaseline:
@@ -346,27 +346,26 @@ class TfidfFactBaseline:
     are both computed. In the data, more than one fact is rarely used,
     even if its possible to do.
     """
+
     def __init__(self, tfidf_path: str, wiki_sql_path: Optional[str] = None):
         self._similarity = Similarity()
         self._similarity.load(tfidf_path)
 
-    def score(self, data_path: str) :
+    def score(self, data_path: str):
         dialogs = CuriosityDialogReader().read(data_path)
         n_assistant_messages = 0
         all_rr = []
         for d in dialogs:
             msg_history = []
-            dialog_senders = d['senders'].array
-            dialog_facts = d['facts']
-            dialog_fact_labels = d['fact_labels']
-            dialog_messages = d['messages']
+            dialog_senders = d["senders"].array
+            dialog_facts = d["facts"]
+            dialog_fact_labels = d["fact_labels"]
+            dialog_messages = d["messages"]
             for msg, sender, facts, fact_labels in zip(
-                    dialog_messages,
-                    dialog_senders,
-                    dialog_facts,
-                    dialog_fact_labels):
+                dialog_messages, dialog_senders, dialog_facts, dialog_fact_labels
+            ):
                 if sender == ASSISTANT_IDX:
-                    context = ' '.join(msg_history)
+                    context = " ".join(msg_history)
                     fact_texts = [tokens_to_str(tokens) for tokens in facts]
                     doc_scores = self._similarity.score(context, fact_texts)
                     # First get a list where first position is maximal score
@@ -377,7 +376,7 @@ class TfidfFactBaseline:
                         if rel_idx != -1:
                             # Then find the rank + 1 of the relevant doc
                             exists_rel_doc = True
-                            #import ipdb;ipdb.set_trace();
+                            # import ipdb;ipdb.set_trace();
                             rank = np.where(sorted_scores == rel_idx)[0][0] + 1
                             # We only care about the best rank, if there are multiple
                             # relevant docs
@@ -394,9 +393,9 @@ class TfidfFactBaseline:
                 msg_text = tokens_to_str(msg.tokens)
                 msg_history.append(msg_text)
         mean_rr = np.mean(all_rr)
-        log.info(f'Msgs with Facts: {len(all_rr)}')
-        log.info(f'Total Assistant Msgs: {n_assistant_messages}')
-        log.info(f'MRR: {mean_rr}')
+        log.info(f"Msgs with Facts: {len(all_rr)}")
+        log.info(f"Total Assistant Msgs: {n_assistant_messages}")
+        log.info(f"MRR: {mean_rr}")
         return mean_rr
 
 
@@ -404,9 +403,9 @@ def fact_length_stats(data_path: str):
     dialogs = CuriosityDialogReader().read(data_path)
     fact_lengths = []
     for d in dialogs:
-        for facts in d['facts']:
+        for facts in d["facts"]:
             for f in facts:
-                fact_lengths.append({'n_tokens': f.sequence_length()})
+                fact_lengths.append({"n_tokens": f.sequence_length()})
     df = pd.DataFrame(fact_lengths)
-    summary = df.describe(percentiles=[.25, .5, .75, .8, .9, .95, .99])
-    log.info(f'Summary\n{summary}')
+    summary = df.describe(percentiles=[0.25, 0.5, 0.75, 0.8, 0.9, 0.95, 0.99])
+    log.info(f"Summary\n{summary}")

@@ -6,7 +6,7 @@ from curiosity.metrics import MeanReciprocalRank
 
 
 def test_mrr():
-    logits = torch.tensor([1, 2, .5, 0, 4, 3]).reshape(1, 1, -1)
+    logits = torch.tensor([1, 2, 0.5, 0, 4, 3]).reshape(1, 1, -1)
     labels = torch.tensor([0, 1, 0, 0, 0, 1]).reshape(1, 1, -1)
     mask = torch.tensor([1]).reshape(1, 1, -1)
     metric = MeanReciprocalRank()

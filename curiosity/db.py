@@ -9,32 +9,35 @@ import os
 from contextlib import contextmanager
 from collections import defaultdict
 from typing import List, Tuple, Dict, NamedTuple
-from sqlalchemy import (
-    Boolean, Integer, ForeignKey, Column, Text, create_engine
-)
+from sqlalchemy import Boolean, Integer, ForeignKey, Column, Text, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import (
-    Load, sessionmaker, scoped_session, relationship, selectinload
+    Load,
+    sessionmaker,
+    scoped_session,
+    relationship,
+    selectinload,
 )
 from sqlalchemy.orm.scoping import ScopedSession
 
 
 def md5sum(filename: str) -> str:
-    return subprocess.run(
-        f'md5sum {filename}',
-        shell=True,
-        stdout=subprocess.PIPE,
-        check=True
-    ).stdout.decode('utf-8').split()[0]
+    return (
+        subprocess.run(
+            f"md5sum {filename}", shell=True, stdout=subprocess.PIPE, check=True
+        )
+        .stdout.decode("utf-8")
+        .split()[0]
+    )
 
 
 def verify_checksum(checksum: str, filename: str) -> None:
     if os.path.exists(filename):
         file_checksum = md5sum(filename)
         if checksum != file_checksum:
-            raise ValueError(f'Incorrect checksum for: {filename}')
+            raise ValueError(f"Incorrect checksum for: {filename}")
     else:
-        raise ValueError(f'File does not exist: {filename}')
+        raise ValueError(f"File does not exist: {filename}")
 
 
 REF_RE = r"< ref >.*?< \/ ref >"
@@ -52,7 +55,7 @@ Base = declarative_base()
 
 
 def create_sql(sql_path: str):
-    engine = create_engine(f'sqlite:///{sql_path}')
+    engine = create_engine(f"sqlite:///{sql_path}")
     Base.metadata.bind = engine
     factory = sessionmaker(bind=engine)
     session_cls = scoped_session(factory)
@@ -63,6 +66,7 @@ class EntityLink(NamedTuple):
     """
     This represents a single fact in the frontend
     """
+
     page_entity: str
     mention_entity: str
     section_title: str
@@ -88,7 +92,7 @@ class Fact(Base):
     paragraph_idx = Column(Integer, nullable=False)
     text = Column(Text(), nullable=False)
     pageviews = Column(Integer, nullable=False)
-    mentions = relationship('Mention')
+    mentions = relationship("Mention")
 
 
 class Mention(Base):
@@ -99,8 +103,8 @@ class Mention(Base):
     # Duplicate of Fact.page for speed, these never diverge so its safe
     page = Column(Text(), nullable=False)
     title = Column(Text(), nullable=False)
-    fact_id = Column(Integer, ForeignKey('fact.id'), nullable=False)
-    fact = relationship('Fact', back_populates='mentions')
+    fact_id = Column(Integer, ForeignKey("fact.id"), nullable=False)
+    fact = relationship("Fact", back_populates="mentions")
 
 
 class WikiSummary(Base):
@@ -115,8 +119,9 @@ class CuriosityStore:
     """
     Convenience class for reading all data
     """
+
     def __init__(self, sql_path) -> None:
-        self._engine = create_engine(f'sqlite:///{sql_path}')
+        self._engine = create_engine(f"sqlite:///{sql_path}")
         Base.metadata.bind = self._engine
         self._pages: List[str] = self._cache_pages()
 
@@ -135,21 +140,12 @@ class CuriosityStore:
 
     def _cache_pages(self) -> List[str]:
         with self._session_scope as session:
-            rows = (
-                session
-                .query(Fact.page)
-                .distinct()
-                .all()
-            )
+            rows = session.query(Fact.page).distinct().all()
             return [r[0] for r in rows]
 
     def get_fact_lookup(self):
         with self._session_scope as session:
-            rows = (
-                session
-                .query(Fact)
-                .all()
-            )
+            rows = session.query(Fact).all()
             return {f.id: f.text for f in rows}
 
     def get_focus_entities(self):
@@ -168,10 +164,9 @@ class CuriosityStore:
     def random_sections(self, page_entity: str, n: int) -> List[str]:
         with self._session_scope as session:
             rows = (
-                session
-                .query(Fact)
+                session.query(Fact)
                 .filter_by(page=page_entity)
-                .filter(Fact.section_title != 'Body')
+                .filter(Fact.section_title != "Body")
                 .group_by(Fact.section_title)
                 .all()
             )
@@ -193,16 +188,18 @@ class CuriosityStore:
             links = []
             for fact in rows:
                 for mention in fact.mentions:
-                    links.append(EntityLink(
-                        fact.page,
-                        mention.title,
-                        fact.section_title,
-                        mention.pageviews,
-                        fact.text,
-                        mention.is_location,
-                        fact.id,
-                        mention.id
-                    ))
+                    links.append(
+                        EntityLink(
+                            fact.page,
+                            mention.title,
+                            fact.section_title,
+                            mention.pageviews,
+                            fact.text,
+                            mention.is_location,
+                            fact.id,
+                            mention.id,
+                        )
+                    )
             return links
 
     def get_facts(self, page_entity: str, known_entity: str) -> List[EntityLink]:
@@ -219,10 +216,14 @@ class CuriosityStore:
             )
             return [
                 EntityLink(
-                    m.fact.page, m.title, m.fact.section_title,
-                    m.pageviews, clean_text(m.fact.text), m.is_location,
+                    m.fact.page,
+                    m.title,
+                    m.fact.section_title,
+                    m.pageviews,
+                    clean_text(m.fact.text),
+                    m.is_location,
                     m.fact_id,
-                    m.id
+                    m.id,
                 )
                 for m in rows
             ]
@@ -236,7 +237,7 @@ class CuriosityStore:
                 session.query(Fact)
                 .filter_by(page=page_entity)
                 .group_by(Fact.section_title)
-                .options(Load(Fact).load_only('page', 'section_title'))
+                .options(Load(Fact).load_only("page", "section_title"))
                 .all()
             )
             return [r.section_title for r in rows]
@@ -253,16 +254,18 @@ class CuriosityStore:
             )
             links = []
             for fact in rows:
-                links.append(EntityLink(
-                    fact.page,
-                    fact.mentions[0].title,
-                    fact.section_title,
-                    fact.mentions[0].pageviews,
-                    fact.text,
-                    fact.mentions[0].is_location,
-                    fact.id,
-                    fact.mentions[0].id
-                ))
+                links.append(
+                    EntityLink(
+                        fact.page,
+                        fact.mentions[0].title,
+                        fact.section_title,
+                        fact.mentions[0].pageviews,
+                        fact.text,
+                        fact.mentions[0].is_location,
+                        fact.id,
+                        fact.mentions[0].id,
+                    )
+                )
             return links
 
     def get_section_facts(self, page_entity: str, section: str) -> List[EntityLink]:
@@ -277,9 +280,14 @@ class CuriosityStore:
                 # Use first mention for now, its not too important, but could be
                 # improved to random later
                 EntityLink(
-                    f.page, f.mentions[0].title, f.section_title,
-                    f.mentions[0].pageviews, clean_text(f.text),
-                    f.mentions[0].is_location, f.id, f.mentions[0].id
+                    f.page,
+                    f.mentions[0].title,
+                    f.section_title,
+                    f.mentions[0].pageviews,
+                    clean_text(f.text),
+                    f.mentions[0].is_location,
+                    f.id,
+                    f.mentions[0].id,
                 )
                 for f in rows
             ]
@@ -299,18 +307,18 @@ class CuriosityStore:
         """
         with self._session_scope as session:
             page_mentions = (
-                session
-                .query(Fact)
+                session.query(Fact)
                 .options(
                     selectinload(Fact.mentions),
-                    Load(Fact).load_only('page', 'pageviews'),
-                    Load(Mention).load_only('pageviews', 'title')
-                ).all()
+                    Load(Fact).load_only("page", "pageviews"),
+                    Load(Mention).load_only("pageviews", "title"),
+                )
+                .all()
             )
-            curr = defaultdict(lambda: {'views': 0, 'entities': set()})
+            curr = defaultdict(lambda: {"views": 0, "entities": set()})
             for fact in page_mentions:
-                curr[fact.page]['views'] = fact.pageviews
-                current_mentions = curr[fact.page]['entities']
+                curr[fact.page]["views"] = fact.pageviews
+                current_mentions = curr[fact.page]["entities"]
                 for m in fact.mentions:
                     current_mentions.add((m.title, m.pageviews))
             return curr

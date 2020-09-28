@@ -15,11 +15,13 @@ class BertEncoder(torch.nn.Module):
     I ran into a lot of trouble trying to get this to work more generically and gave up
     to just implement as a manual switch
     """
-    def __init__(self,
-                 bert_model: Union[str, BertModel],
-                 requires_grad: bool = True,
-                 index: str = "bert",
-                 ) -> None:
+
+    def __init__(
+        self,
+        bert_model: Union[str, BertModel],
+        requires_grad: bool = True,
+        index: str = "bert",
+    ) -> None:
         super().__init__()
 
         if isinstance(bert_model, str):
@@ -47,14 +49,18 @@ class BertEncoder(torch.nn.Module):
             reshaped_input_ids = input_ids.view(-1, word_dim)
             reshaped_token_type_ids = token_type_ids.view(-1, word_dim)
             reshaped_input_mask = input_mask.view(-1, word_dim)
-            _, reshaped_pooled = self.bert_model(input_ids=reshaped_input_ids,
-                                        token_type_ids=reshaped_token_type_ids,
-                                        attention_mask=reshaped_input_mask)
+            _, reshaped_pooled = self.bert_model(
+                input_ids=reshaped_input_ids,
+                token_type_ids=reshaped_token_type_ids,
+                attention_mask=reshaped_input_mask,
+            )
             pooled = reshaped_pooled.view(shape[:-1] + (-1,))
         else:
-            _, pooled = self.bert_model(input_ids=input_ids,
-                                        token_type_ids=token_type_ids,
-                                        attention_mask=input_mask)
+            _, pooled = self.bert_model(
+                input_ids=input_ids,
+                token_type_ids=token_type_ids,
+                attention_mask=input_mask,
+            )
         # Current mask is wordpiece mask, we want an utterance mask
         # So search for utterances with all masked wordpieces
         utter_mask = (input_mask.sum(dim=-1) != 0).long()

@@ -11,15 +11,12 @@ from curiosity.util import get_logger
 log = get_logger(__name__)
 
 
-@Metric.register('mean_reciprocal_rank')
+@Metric.register("mean_reciprocal_rank")
 class MeanReciprocalRank(Metric):
     def __init__(self):
         self._reciprocal_ranks = []
 
-    def __call__(self,
-                 logits: torch.Tensor,
-                 labels: torch.Tensor,
-                 mask: torch.Tensor):
+    def __call__(self, logits: torch.Tensor, labels: torch.Tensor, mask: torch.Tensor):
         """
         logits and labels should be the same shape. Labels should be
         an array of 0/1s to indicate if the document is relevant.
@@ -40,7 +37,7 @@ class MeanReciprocalRank(Metric):
 
         # TODO: This could be batched, but its a pain
         all_ranks = []
-        #import ipdb; ipdb.set_trace()
+        # import ipdb; ipdb.set_trace()
         for batch_idx, turn_idx, fact_idx in indices:
             # List of predictions, first element is index
             # of top ranked document, second of second-top, etc
@@ -57,7 +54,7 @@ class MeanReciprocalRank(Metric):
     @overrides
     def get_metric(self, reset: bool = False) -> float:
         if len(self._reciprocal_ranks) == 0:
-            log.warn('Taking MRR of zero length list')
+            log.warn("Taking MRR of zero length list")
             mrr = 0.0
         else:
             mrr = np.array(self._reciprocal_ranks).mean()
@@ -105,7 +102,8 @@ class MultilabelMicroF1(Metric):
             A tensor of the same shape as ``predictions``.
         """
         predictions, gold_labels, mask = self.unwrap_to_tensors(
-            predictions, gold_labels, mask)
+            predictions, gold_labels, mask
+        )
 
         # Some sanity checks.
         if gold_labels.size() != predictions.size():
@@ -152,15 +150,16 @@ class MultilabelMicroF1(Metric):
         The accumulated accuracy.
         """
         precision = self._precision_correct_count / max(
-            self._precision_total_count, 1.0)
+            self._precision_total_count, 1.0
+        )
         recall = self._recall_correct_count / max(self._recall_total_count, 1.0)
         f1 = 2 * (precision * recall) / max(precision + recall, 1.0)
         if reset:
             self.reset()
         return {
-            'precision': precision,
-            'recall': recall,
-            'f1': f1,
+            "precision": precision,
+            "recall": recall,
+            "f1": f1,
         }
 
     @overrides
