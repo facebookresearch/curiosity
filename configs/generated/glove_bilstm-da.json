@@ -1,0 +1,84 @@
+{
+   "dataset_reader": {
+      "token_indexers": {
+         "tokens": {
+            "lowercase_tokens": true,
+            "type": "single_id"
+         }
+      },
+      "tokenizer": {
+         "type": "word"
+      },
+      "type": "curiosity_dialog"
+   },
+   "iterator": {
+      "batch_size": 64,
+      "type": "basic"
+   },
+   "model": {
+      "act_emb_size": 10,
+      "bert_name": "bert-base-uncased",
+      "bert_trainable": false,
+      "dialog_context": {
+         "bidirectional": false,
+         "hidden_size": 100,
+         "input_size": 420,
+         "type": "lstm"
+      },
+      "disable_dialog_acts": true,
+      "disable_facts": false,
+      "disable_known_entities": false,
+      "disable_likes": false,
+      "dropout_prob": 0.5,
+      "fact_loss_weight": 3,
+      "fact_pos_weight": 9,
+      "fact_ranker": {
+         "similarity_function": {
+            "tensor_1_dim": 100,
+            "tensor_2_dim": 200,
+            "type": "bilinear"
+         },
+         "type": "mean_logit_ranker"
+      },
+      "mention_embedder": {
+         "mentions": {
+            "embedding_dim": 100,
+            "pretrained_file": "dialog_data/wiki2vec_entity_100d.txt",
+            "trainable": false,
+            "type": "embedding"
+         }
+      },
+      "sender_emb_size": 10,
+      "type": "curiosity_model",
+      "use_bert": false,
+      "use_glove": true,
+      "utter_context": {
+         "bidirectional": true,
+         "hidden_size": 100,
+         "input_size": 300,
+         "type": "lstm"
+      },
+      "utter_embedder": {
+         "token_embedders": {
+            "tokens": {
+               "embedding_dim": 300,
+               "pretrained_file": "https://allennlp.s3.amazonaws.com/datasets/glove/glove.6B.300d.txt.gz",
+               "trainable": true,
+               "type": "embedding"
+            }
+         }
+      }
+   },
+   "train_data_path": "dialog_data/curiosity_dialogs.train.json",
+   "trainer": {
+      "num_epochs": 20,
+      "num_serialized_models_to_keep": 5,
+      "optimizer": {
+         "lr": 0.001,
+         "type": "adam"
+      },
+      "patience": 3,
+      "validation_metric": "+total"
+   },
+   "validation_data_path": "dialog_data/curiosity_dialogs.val.json"
+}
