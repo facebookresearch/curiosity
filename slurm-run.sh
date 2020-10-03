@@ -17,7 +17,6 @@ hostname
 nvidia-smi
 source /fs/clip-quiz/entilzha/anaconda3/etc/profile.d/conda.sh > /dev/null 2> /dev/null
 conda activate curiosity
-export SLURM_LOG_FILE="/fs/clip-quiz/entilzha/logs/${SLURM_JOB_ID}.log"
 pwd
 # $1 is the model name, eg "glove_bilstm"
 # $2 is the random seed, eg 42
