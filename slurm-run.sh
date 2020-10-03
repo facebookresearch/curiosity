@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 #SBATCH --job-name=curiosity
-#SBATCH --time=0-02:00:00
+#SBATCH --time=1-00:00:00
 #SBATCH --gres=gpu:1
-#SBATCH --qos=gpu-short
+#SBATCH --qos=gpu-medium
 #SBATCH --chdir=/fs/clip-scratch/entilzha/curiosity
 #SBATCH --output=/fs/www-users/entilzha/logs/%A.log
 #SBATCH --error=/fs/www-users/entilzha/logs/%A.log

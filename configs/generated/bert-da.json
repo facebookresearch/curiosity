@@ -2,13 +2,13 @@
    "dataset_reader": {
       "token_indexers": {
          "bert": {
-            "pretrained_model": "/tmp/curiosity_bert_lm",
+            "pretrained_model": "bert-basse-uncased",
             "type": "bert-pretrained"
          }
       },
       "tokenizer": {
          "do_lowercase": true,
-         "model_name": "/tmp/curiosity_bert_lm",
+         "model_name": "bert-base-uncased",
          "type": "pretrained_transformer"
       },
       "type": "curiosity_dialog"
@@ -19,7 +19,7 @@
    },
    "model": {
       "act_emb_size": 10,
-      "bert_name": "/tmp/curiosity_bert_lm",
+      "bert_name": "bert-base-uncased",
       "bert_trainable": false,
       "dialog_context": {
          "bidirectional": false,
