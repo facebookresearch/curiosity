@@ -4,7 +4,7 @@
 #SBATCH --time=0-02:00:00
 #SBATCH --gres=gpu:1
 #SBATCH --qos=gpu-short
-#SBATCH --chdir=/fs/clip-quiz/entilzha/code/curiosity
+#SBATCH --chdir=/fs/clip-scratch/entilzha/curiosity
 #SBATCH --output=/fs/www-users/entilzha/logs/%A.log
 #SBATCH --error=/fs/www-users/entilzha/logs/%A.log
 #SBATCH --cpus-per-task=2
