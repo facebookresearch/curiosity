@@ -10,6 +10,7 @@
 #SBATCH --cpus-per-task=2
 #SBATCH --mem-per-cpu=10g
 #SBATCH --partition=gpu
+#SBATCH --exclude=materialgpu00
 
 set -x
 hostname
