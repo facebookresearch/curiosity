@@ -2,7 +2,7 @@
    "dataset_reader": {
       "token_indexers": {
          "bert": {
-            "pretrained_model": "bert-basse-uncased",
+            "pretrained_model": "bert-base-uncased",
             "type": "bert-pretrained"
          }
       },
