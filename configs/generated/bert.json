@@ -60,7 +60,7 @@
    "train_data_path": "dialog_data/curiosity_dialogs.train.json",
    "trainer": {
       "num_epochs": 40,
-      "num_serialized_models_to_keep": 10,
+      "num_serialized_models_to_keep": 2,
       "optimizer": {
          "lr": 0.0001,
          "type": "adam"
