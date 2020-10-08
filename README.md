@@ -1,6 +1,6 @@
 # Information Seeking in the Spirit of Learning: a Dataset for Conversational Curiosity
 
-This repository contains code for our EMNLP 2020 paper which you can cite like this:
+This repository accompanies our EMNLP 2020 paper which you can cite like this:
 
 ```
 @inproceedings{rodriguez2020curiosity,
@@ -11,57 +11,53 @@ This repository contains code for our EMNLP 2020 paper which you can cite like t
 }
 ```
 
+To explore the dataset visit: [datasets.pedro.ai/curiosity](https://datasets.pedro.ai/curiosity)
+
+For a summary of our work visit: [pedro.ai/curiosity](https://www.pedro.ai/curiosity)
+
 ## Structure
 
-The code for our paper is split into two parts: (1) model code used to run experiments and (2) code/latex that generates the publication PDF file.
-The published PDF was created by running the experiments and then exporting the experimental results to the paper code, which is compiled to the paper itself.
+This repository has three components:
 
-## Model Code
-
-Our model code is written using `pytorch` and `allennlp`.
-To run it, you'll need to install some software and download some data.
-
-
-### Installation
-
-Install a recent version of anaconda python https://www.anaconda.com/distribution/
-For better reproducibility, we are providing python poetry based environment definitions in addition to anaconda environments.
-
-### Updated Poetry-based Instructions
-
-Install python-poetry.org and then run `poetry install`. Before running any other commands, first enter the environment with `poetry shell`.
-
-
-### Original Anaconda-based Instructions
-
-For CPU:
-
-1. Create an anconda environment `conda env create -f environment.yaml` (creates an environment named curiosity)
-2. Activate the environment, in fish shell this is `conda activate curiosity`
-
-For GPU (not changed environemnt file):
-
-1. Create an anconda environment `conda env create -f environment_gpu.yaml` (creates an environment named curiosity)
-2. Activate the environment, in fish shell this is `conda activate curiosity`
+1. The Curiosity dataset in `dialog_data/curiosity_dialogs.json`, with folded versions in `dialog_data/curiosity_dialogs.*.json`
+2. Modeling code used in experiments
+3. Analysis, plotting, and latex code that generates the publication's PDF file.
 
 ### Data
-
-Dialog data is stored in `dialog_data`, so you should not need to download anything more.
-Our data is also available at TODO.
 
 #### File Description
 
 * `curiosity_dialogs.{train, val, test, test_zero}.json`: Dialogs corresponding to each data fold
-* `wiki_sql.sqlite.db`: A sqlite database storing our processsed version of the Wikipedia subset that we use
-* `fact_db_links.json`: A json file containing an entity linked version of our Wikipedia data
+* `wiki_sql.sqlite.db`: A sqlite database storing our processed version of the Wikipedia subset that we use
+* `fact_db_links.json`: A json file containing an entity linked version of our Wikipedia data. It stores the location of the entity link, which the database does not contain
+
+#### Downloading Data
+There are two ways to download our data.
 
 
-#### Entity Linked Facts
+First, you could clone our repository and use git lfs.
 
-Although the `wiki_sql.sqlite.db` stores the facts, it does not store the positions of each entity link.
-For this, you need to use the jsonlines file from the entity linker.
+1. Install [git lfs](https://git-lfs.github.com)
+2. Clone the repository: `https://github.com/facebookresearch/curiosity.git`
+3. Run `git lfs pull`
 
-#### Wikipedia2Vec
+Second, you can download from these URLs with tools like `wget`:
+
+* https://obj.umiacs.umd.edu/curiosity/curiosity_dialogs.json
+* https://obj.umiacs.umd.edu/curiosity/curiosity_dialogs.train.json
+* https://obj.umiacs.umd.edu/curiosity/curiosity_dialogs.val.json
+* https://obj.umiacs.umd.edu/curiosity/curiosity_dialogs.test.json
+* https://obj.umiacs.umd.edu/curiosity/curiosity_dialogs.test_zero.json
+* https://obj.umiacs.umd.edu/curiosity/fact_db_links.json
+* https://obj.umiacs.umd.edu/curiosity/wiki2vec_entity_100d.txt
+* https://obj.umiacs.umd.edu/curiosity/wiki_sql.sqlite.db
+
+
+#### Re-creating Processed Data
+
+We provide the inputs to our modeling experiments; to reproduce these inputs follow these instructions.
+
+##### Wikipedia2Vec
 
 The file `wiki2vec_entity_100d.txt` is the output of running the following steps:
 
@@ -70,15 +66,57 @@ The file `wiki2vec_entity_100d.txt` is the output of running the following steps
 3. Filter out non-entities with:
 4. `./cli filter-emb enwiki_20180420_100d.txt wiki2vec_entity_100d.txt`
 
-## Training and Evaluating Models
+
+### Model Code
+
+Our model code is written using `pytorch` and `allennlp`.
+Before reproducing our experiments, you'll need to install some software.
+
+#### Installation
+
+Install a recent version of anaconda python https://www.anaconda.com/distribution/.
+The canonical way to reproduce our experiments is with the [poetry configuration](https://python-poetry.org).
+We also provide anaconda environment definitions, but the exact versions of all dependencies are not pinned so results may differ.
+
+##### Poetry-based Instructions
+
+1. Install [poetry](https://python-poetry.org)
+2. Run `conda create -n curiosity python=3.7`
+3. Run `conda activate curiosity` (fish shell)
+4. Run `poetry install`
+5. Before running any model commands, activate the environment with `poetry shell`
+
+##### Anaconda-based Instructions
+
+For CPU:
+
+1. Create an anaconda environment `conda env create -f environment.yaml` (creates an environment named curiosity)
+2. Activate the environment, in fish shell this is `conda activate curiosity`
+
+For GPU:
+
+1. Create an anaconda environment `conda env create -f environment_gpu.yaml` (creates an environment named curiosity)
+2. Activate the environment, in fish shell this is `conda activate curiosity`
+
+#### Training and Evaluating Models
 
 Models are run using a combination of the `allennlp train`, `allennlp evaluate`, and `./cli` command (in this repository).
 
 In our paper, we vary models according to two axes:
-- Text encoder: glove+lstm or bert
-- Feature ablations: everything and leave one out
+* Our `charm` model corresponds to `glove_bilstm`
+* `glove_distributed` is the context-free version of `charm`
+* The `bert` baseline corresponds to `e2e_bert`
+* Names with like `glove_bilstm-feature` mean train `glove_bilstm` ablating (`-` minus) `feature`.
 
-The configuration `configs/model.jsonnet` is the parent configuration. This can be converted into the set of configurations in the paper by running:
+`allennlp` defines model configuration with `jsonnet` or `json` files.
+In our work, we used the configuration files in `configs/generated/`:
+
+* `glove_bilstm.json`
+* `glove_distributed.json`
+* `e2e_bert.json`
+
+These configurations were generated from the parent configuration `configs/model.jsonnet`
+To re-generate these, you can run this command:
 
 ```bash
 $ ./cli gen-configs experiments/
@@ -93,31 +131,35 @@ $ allennlp evaluate --include-package curiosity --output-file experiments/glove_
 $ allennlp evaluate --include-package curiosity --output-file experiments/glove_bilstm_zero_metrics.json models/glove_bilstm dialog_data/curiosity_dialogs.test_zero.json
 ```
 
-### Running on GPU
-In addition to installing the gpu variant of the environment, to use the GPU you need to pass: `-o '{"trainer": {"cuda_device": 0}}'` to the `allennlp train` command. You should change the device number to match an open GPU.
+By default, the configurations don't specify the cuda device so this must be passed in as an override like so:
+* For `allennlp train`: `-o '{"trainer": {"cuda_device": 0}}'`
+* For `allennlp evaluate`: `--cuda-device 0`
 
-## Export to Paper
+
+#### Export Experiments to Paper
+
 The configuration generator also properly names files so that if you copy files with `ssh` as shown below, the results will automagically update the next time you run `make 2020_acl_curiosity.paper.pdf` in the repo:
 
+By default, the scripts in `run_allennlp.sh` put models in `models/` and experimental results (metrics etc) in `experiments`.
+Our code is designed so that copying the contents of `experiments` into a corresponding directory in the paper code will "import" the results into the paper.
 
 ```bash
-cp 'experiments/*' ~/code/curiosity-paper/2020_acl_curiosity/data/experiments/
+# Local copy
+cp 'experiments/*' ~/code/curiosity-paper/2020_emnlp_curiosity/data/experiments/
+# remote copy
+scp 'experiments/*' hostname:~/code/curiosity-paper/2020_emnlp_curiosity/data/experiments/
 ```
-Then be sure to commit those updates to the repository.
 
-TODO: Update this section to explain thats how to reproduce paper results
-
-## Tests
+#### Running Tests
 
 Run `pytest` to run unit tests for the loss, metrics, and reader.
 
-## Adding new module
 
-The easiest way to modify the model is to:
-- If possible, add a parameter to `curiosity.model.CuriosityModel` that is a general version of it (eg, `Seq2VecEncoder` or `FactRanker`)
-- Implement a module that implements its api (or use one/combination in allennlp), EG `curiosity.nn.MeanLogitRanker` implements `curiosity.nn.FactRanker`
-- In the config `configs/bilstm.jsonnet`, name the implementaiton to use, eg the `fact_ranker` entry
+## Paper Code
+
+TODO
 
 ## FAQ
 
-1. Is the data collection interface open source? No, unfortunately that is tied to internal systems so difficult to open source.
+1. Is the data collection interface open source? No, unfortunately that is tied to internal systems so it is difficult to open source. The interfaces were written in a combination of ReactJS and python/flask.
+2. Who should I contact with questions? Please email Pedro Rodriguez at me@pedro.ai
