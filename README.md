@@ -17,11 +17,11 @@ For a summary of our work visit: [pedro.ai/curiosity](https://www.pedro.ai/curio
 
 ## Structure
 
-This repository has three components:
+The project has three components:
 
 1. The Curiosity dataset in `dialog_data/curiosity_dialogs.json`, with folded versions in `dialog_data/curiosity_dialogs.*.json`
 2. Modeling code used in experiments
-3. Analysis, plotting, and latex code that generates the publication's PDF file.
+3. [Analysis, plotting, and latex code that generates the publication's PDF file](https://github.com/entilzha/publications).
 
 ### Data
 
