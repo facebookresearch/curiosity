@@ -98,6 +98,11 @@ For GPU:
 1. Create an anaconda environment `conda env create -f environment_gpu.yaml` (creates an environment named curiosity)
 2. Activate the environment, in fish shell this is `conda activate curiosity`
 
+##### Docker-based Instructions
+
+If you prefer using Docker for dependencies, we include a `Dockerfile` that builds all the required dependencies.
+Note, that to enable GPU support you may need to use nvidia-docker and modify this file to install cuda dependencies
+
 #### Training and Evaluating Models
 
 Models are run using a combination of the `allennlp train`, `allennlp evaluate`, and `./cli` command (in this repository).
