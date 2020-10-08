@@ -157,7 +157,7 @@ Run `pytest` to run unit tests for the loss, metrics, and reader.
 
 ## Paper Code
 
-TODO
+The code for the paper can be found here: github.com/entilzha/publications
 
 ## FAQ
 
