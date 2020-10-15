@@ -168,3 +168,7 @@ The code for the paper can be found here: github.com/entilzha/publications
 
 1. Is the data collection interface open source? No, unfortunately that is tied to internal systems so it is difficult to open source. The interfaces were written in a combination of ReactJS and python/flask.
 2. Who should I contact with questions? Please email Pedro Rodriguez at me@pedro.ai
+
+## License
+
+Curiosity is released under [CC-BY-NC-4.0](https://creativecommons.org/licenses/by-nc/4.0/legalcode), see [LICENSE](LICENSE) for details.
