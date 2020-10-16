@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+#Copyright (c) Facebook, Inc. and its affiliates.
+
 # Experiments for: glove_bilstm
 allennlp train --include-package curiosity -s models/glove_bilstm -f configs/generated/glove_bilstm.json -o '{"trainer": {"cuda_device": 0}}'
 allennlp evaluate --include-package curiosity --output-file experiments/glove_bilstm_val_metrics.json models/glove_bilstm dialog_data/curiosity_dialogs.val.json

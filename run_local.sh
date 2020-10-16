@@ -1,3 +1,5 @@
+# Copyright (c) Facebook, Inc. and its affiliates.
+
 # This assumes the the curiosity conda env is set
 # Run for example:
 # bash run_local.sh bert-facts 1

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+#Copyright (c) Facebook, Inc. and its affiliates.
+
 #SBATCH --job-name=curiosity
 #SBATCH --time=1-00:00:00
 #SBATCH --gres=gpu:1

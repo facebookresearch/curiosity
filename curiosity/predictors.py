@@ -1,3 +1,7 @@
+#!/usr/bin/env python3
+
+# Copyright (c) Facebook, Inc. and its affiliates.
+
 import os
 import numpy as np
 from overrides import overrides
@@ -43,7 +47,7 @@ class CuriosityPredictor(Predictor):
                 break
 
             instance = self._dataset_reader.text_to_instance(d)
-            prediction = self.predict_instance(instance)  
+            prediction = self.predict_instance(instance)
 
             # Label predictions for this dialog
             label_prediction = {

@@ -1,3 +1,5 @@
+#Copyright (c) Facebook, Inc. and its affiliates.
+
 sbatch slurm-run.sh glove_bilstm 1
 sbatch slurm-run.sh glove_bilstm 2
 

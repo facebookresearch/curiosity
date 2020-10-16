@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+
+# Copyright (c) Facebook, Inc. and its affiliates.
+
 import os
 import json
 from itertools import cycle

@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+
+# Copyright (c) Facebook, Inc. and its affiliates.
+
 from typing import Dict
 import torch
 from overrides import overrides

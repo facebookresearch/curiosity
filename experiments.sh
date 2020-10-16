@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+# Copyright (c) Facebook, Inc. and its affiliates.
 # Similarly to data.sh, this script is mainly documentation of
 # how to run all the experiments
 
