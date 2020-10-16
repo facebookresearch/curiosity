@@ -1,0 +1,20 @@
+name: curiosity_gpu
+dependencies:
+  - python=3.7
+  - pandas
+  - scipy
+  - numpy
+  - pytorch=1.1.0
+  - cudatoolkit=9
+  - scikit-learn=0.20.0
+  - ipython
+  - click
+  - tqdm
+  - sqlalchemy
+  - pytest
+  - pip
+  - pip:
+    - plotnine
+    - allennlp==0.8.5
+channels:
+  - pytorch
