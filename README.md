@@ -11,7 +11,7 @@ This repository accompanies our EMNLP 2020 paper which you can cite like this:
 }
 ```
 
-To explore the dataset visit: [datasets.pedro.ai/curiosity](https://datasets.pedro.ai/curiosity)
+To explore the dataset visit: [datasets.pedro.ai/dataset/curiosity](https://datasets.pedro.ai/dataset/curiosity)
 
 For a summary of our work visit: [pedro.ai/curiosity](https://www.pedro.ai/curiosity)
 
